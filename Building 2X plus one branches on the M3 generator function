@@ -1,0 +1,155 @@
+import Mathlib
+
+set_option linter.unusedVariables false
+
+-- ============================================================================
+-- 1. Reduce Even Numbers to Odd Line
+-- ============================================================================
+def reduceToOdd (n : Nat) : Nat :=
+if _h : n % 2 = 0 ∧ n > 0 then
+ reduceToOdd (n / 2)
+else
+ n
+
+-- ============================================================================
+-- 2. Transform to 4x + 1 Groups & Lower Trajectory Connectivity
+-- ============================================================================
+def toGroup (x : Nat) : Nat := 4 * x + 1
+
+def forward_step (x : Nat) : Nat := 4 * x + 1
+
+def reduce_group_step (n : Nat) : Nat :=
+ (n - 1) / 4
+
+-- Lower trajectory step functions
+def fA1 (x : Nat) : Nat := (2 * x) / 3
+def fA2 (x : Nat) : Nat := (4 * x) / 3
+def get_remainder (n : Nat) : Nat := n % 3
+def uniform_reverse (n : Nat) : Nat := (3 * n + 1) / 2
+
+-- Connection from 5 to 3: (2 * 5) / 3 = 3
+theorem five_connects_to_three : fA1 5 = 3 := by rfl
+
+-- Definition of a Root Node (must be a non-4x+1 number AND an odd number)
+def IsRootNode (n : Nat) : Prop :=
+ (¬ ∃ x : Nat, x > 0 ∧ n = 4 * x + 1) ∧ (n % 2 = 1)
+
+-- ============================================================================
+-- 3. M3 DAG Generator Function & Step Functions
+-- ============================================================================
+def M3Func (x : Nat) : Nat := 16 * (x / 3) + 1
+def M3 (x : Nat) : Nat := 16 * (x / 3) + 1
+
+def mainline_step (n : Nat) : Nat :=
+ if n % 3 = 0 then
+   16 * (n / 3) + 1
+ else
+   (2 * n) / 3
+
+def custom_step (n : Nat) : Nat :=
+ if n % 3 = 0 then
+   (2 * n) / 3
+ else if n % 3 = 1 then
+   (2 * n) / 3
+ else
+   (4 * n) / 3
+
+-- Origin starting node proof
+theorem origin_is_one : M3Func 0 = 1 := by rfl
+
+-- Growth comparisons restricted to odd numbers
+theorem m3_outpaces_fA1 (x : Nat) (h_odd : x % 2 = 1) (h_pos : x > 0) : fA1 x < M3Func x := by
+ unfold fA1 M3Func
+ have h_div : x = 3 * (x / 3) + x % 3 := (Nat.div_add_mod x 3).symm
+ have h_mod : x % 3 < 3 := Nat.mod_lt x (by decide)
+ interval_cases x % 3 <;> omega
+
+theorem m3_outpaces_fA2 (x : Nat) (h_odd : x % 2 = 1) (h_ge : x ≥ 3) : fA2 x < M3Func x := by
+ unfold fA2 M3Func
+ have h_div : x = 3 * (x / 3) + x % 3 := (Nat.div_add_mod x 3).symm
+ have h_mod : x % 3 < 3 := Nat.mod_lt x (by decide)
+ interval_cases x % 3 <;> omega
+
+theorem min_bound (n : Nat) (h_div : n % 3 = 0) (h_odd : n % 2 = 1) (h_pos : n > 0) :
+   M3Func n ≥ 1 := by
+ have h_div_mul : n = 3 * (n / 3) := by omega
+ have hn : 3 ≤ n := by omega
+ have hdiv : 1 ≤ n / 3 := Nat.le_div_iff_mul_le (by decide) |>.mpr (by omega)
+ unfold M3Func
+ omega
+
+theorem m3_universal_trajectory (r : Nat) (h_div : r % 3 = 0) (h_odd : r % 2 = 1) (h_pos : r > 0) :
+   r < M3Func r := by
+ have h_div_mul : r = 3 * (r / 3) := by omega
+ have hr : 3 ≤ r := by omega
+ have hdiv : 1 ≤ r / 3 := Nat.le_div_iff_mul_le (by decide) |>.mpr (by omega)
+ unfold M3Func
+ omega
+
+theorem no_loops (x : Nat) (hx : x % 3 = 0) (h_odd : x % 2 = 1) (h_pos : x > 0) :
+   M3Func x ≠ x := by
+ have h_div_mul : x = 3 * (x / 3) := by omega
+ have hx_ge : 3 ≤ x := by omega
+ have h_div_one : 1 ≤ x / 3 := by omega
+ unfold M3Func
+ omega
+
+theorem m3_preserves_odd (x : Nat) (h_odd : x % 2 = 1) (hx : x % 3 = 0) : (M3 x) % 2 = 1 := by
+ have h_div_mul : x = 3 * (x / 3) := by omega
+ unfold M3
+ omega
+
+-- ============================================================================
+-- 4. 2X Plus One Edge of M3 Generator Function
+-- ============================================================================
+def branch2x1 (x : Nat) : Nat := 2 * x + 1
+
+-- A number gets a 2x + 1 branch if it is a root node (excluding 1 and 3)
+def Has2x1Branch (n : Nat) : Prop :=
+ IsRootNode n ∧ n ≠ 1 ∧ n ≠ 3
+
+-- Proof that 1 does NOT have a 2x + 1 branch
+theorem one_has_no_branch : ¬ Has2x1Branch 1 := by
+ intro h
+ exact h.2.1 rfl
+
+-- Proof that 3 does NOT have a 2x + 1 branch
+theorem three_has_no_branch : ¬ Has2x1Branch 3 := by
+ intro h
+ exact h.2.2 rfl
+
+-- Proof that 19 is a Root Node and gets a 2x + 1 branch (which equals 39)
+theorem nineteen_is_root : IsRootNode 19 := by
+ constructor
+ · intro h
+   rcases h with ⟨x, hx, heq⟩
+   omega
+ · decide
+
+theorem nineteen_has_branch : Has2x1Branch 19 := by
+ refine ⟨nineteen_is_root, by decide, by decide⟩
+
+theorem nineteen_branch_value : branch2x1 19 = 39 := by rfl
+
+-- ============================================================================
+-- 5. Inverse Section
+-- ============================================================================
+def guaranteed_m3_inverse (n : Nat) : Nat :=
+ 3 * ((n - 1) / 16)
+
+def inverse_m3 (n : Nat) : Nat :=
+ 3 * ((n - 1) / 16)
+
+def trace_m3_backward (n : Nat) : Option Nat :=
+ if (n - 1) % 16 = 0 ∧ ((n - 1) / 16) % 3 = 0 then
+   some (3 * ((n - 1) / 16))
+ else
+   none
+
+theorem inverse_m3_recovers_original (x : Nat) (hx : x % 3 = 0) (h_odd : x % 2 = 1) (h_pos : x > 0) :
+   inverse_m3 (M3Func x) = x := by
+ have h_ge : 3 ≤ x := by omega
+ have h_div_pos : 1 ≤ x / 3 := by omega
+ unfold inverse_m3 M3Func
+ have h_m3 : 16 * (x / 3) / 16 = x / 3 := by omega
+ omega
