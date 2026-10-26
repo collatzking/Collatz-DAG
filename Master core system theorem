@@ -7,16 +7,16 @@ set_option linter.unusedVariables false
 -- ============================================================================
 def reduceToOdd (n : Nat) : Nat :=
 if _h : n % 2 = 0 ∧ n > 0 then
-  reduceToOdd (n / 2)
+ reduceToOdd (n / 2)
 else
-  n
+ n
 
 def IsOdd (n : Nat) : Prop := n % 2 = 1
 def toGroup (x : Nat) : Nat := 4 * x + 1
 
 theorem mod_three_cases (n : Nat) :
- (n % 3 = 0) ∨ (n % 3 = 1) ∨ (n % 3 = 2) := by
- omega
+(n % 3 = 0) ∨ (n % 3 = 1) ∨ (n % 3 = 2) := by
+omega
 
 -- ============================================================================
 -- 2. Base Routing, Step Functions & Track Definitions
@@ -30,17 +30,17 @@ def uniform_reverse (n : Nat) : Nat := (3 * n + 1) / 2
 
 def mainline_step (n : Nat) : Nat :=
 if n % 3 = 0 then
-  16 * (n / 3) + 1
+ 16 * (n / 3) + 1
 else
-  (2 * n) / 3
+ (2 * n) / 3
 
 def custom_step (n : Nat) : Nat :=
 if n % 3 = 0 then
-  fA1 n
+ fA1 n
 else if n % 3 = 1 then
-  fA2 n
+ fA2 n
 else
-  fA1 n
+ fA1 n
 
 -- ============================================================================
 -- 3. Exact Guarded & Standard Inverse Functions
@@ -57,11 +57,11 @@ def g_A2 (n : Nat) : Nat := (3 * n + 1) / 4
 
 def guarded_inverse (n : Nat) : Option Nat :=
 if (n - 1) % 16 = 0 ∧ ((n - 1) / 16) % 3 = 0 then
-  some (3 * ((n - 1) / 16))
+ some (3 * ((n - 1) / 16))
 else if (3 * n + 1) % 2 = 0 then
-  some ((3 * n + 1) / 2)
+ some ((3 * n + 1) / 2)
 else
-  none
+ none
 
 -- ============================================================================
 -- 4. M3 Growth Function Properties (Outward Trajectory Only)
@@ -175,18 +175,20 @@ theorem odd_power_two_sequence (n : Nat) (k : Nat) (hx : n % 3 ≠ 0) :
    | inr _h2 => omega
 
 -- ============================================================================
--- 10. Track Bridge Equivalences & Growth Comparison
+-- 10. Universal Track Bridge & Pairing
 -- ============================================================================
-theorem even_odd_track_link (x : Nat) :
- 4 * x = (4 * x + 1) - 1 := by
- omega
+def odd_track (start : Nat) : Nat → Nat
+ | 0 => start
+ | n + 1 => 4 * (odd_track start n) + 1
 
-theorem general_track_bridge (n : Nat) (k : Nat) (hx : n % 3 ≠ 0) :
- (n * 2^(2*k) - 1) / 3 = (n * 4^k - 1) / 3 := by
- have h_base : (2:Nat)^(2*k) = ((2:Nat)^2)^k := by rw [pow_mul]
- have h_four : (2:Nat)^2 = 4 := by rfl
- have : 2^(2*k) = 4^k := by rw [h_base, h_four]
- rw [this]
+def even_track_value (start n : Nat) : Nat :=
+ 3 * (odd_track start n) + 1
+
+theorem universal_track_pairing (start n : Nat) (x : Nat) (hx : odd_track start n = 4 * x + 1) :
+ ∃ m, even_track_value start n = 4 * m := by
+ dsimp [even_track_value]
+ use 3 * x + 1
+ omega
 
 -- ============================================================================
 -- 11. Path Tracing & Connectivity Case Splits
@@ -384,7 +386,7 @@ def trace_m3_backward (n : Nat) : Option Nat :=
  else
    none
 
-theorem inverse_m3_recovers_original (x : Nat) (hx : x % 3 = 0) (h_odd : x % 2 = 1) (h_pos : x > 0) :
+theorem inverse_m3_recovers_original (x : Nat) (hx : x % 3 = 0) (h_odd : x % 2 = 1) (h_pos : n > 0) :
  inverse_m3 (M3Func x) = x := by
  have h_ge : 3 ≤ x := by omega
  have h_div_pos : 1 ≤ x / 3 := by omega
