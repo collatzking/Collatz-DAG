@@ -26,10 +26,8 @@ def reduceToOdd (n : Nat) : Nat :=
  else
    n
 
--- Map an odd number to its corresponding 4x+1 group member
 def toGroup (x : Nat) : Nat := 4 * x + 1
 
--- Basic remainder helper rule for mod 3
 theorem mod_three_cases (n : Nat) :
  (n % 3 = 0) ∨ (n % 3 = 1) ∨ (n % 3 = 2) := by
  omega
@@ -41,7 +39,6 @@ def fA2 (x : Nat) : Nat := (4 * x) / 3
 def forward_step (x : Nat) : Nat := 4 * x + 1
 def get_remainder (n : Nat) : Nat := n % 3
 
--- A single uniform reverse rule for all odd integers
 def uniform_reverse (n : Nat) : Nat := (3 * n + 1) / 2
 
 -- 3. Inverse functions for connectivity
@@ -135,17 +132,19 @@ theorem odd_power_two_sequence (n k : Nat) (_hx : n % 3 ≠ 0) :
    | inl _h1 => omega
    | inr _h2 => omega
 
--- 10. Track Bridge Equivalences & Growth Comparison
-theorem even_odd_track_link (x : Nat) :
- 4 * x = (4 * x + 1) - 1 := by
- omega
+-- 10. Universal Track Bridge & Pairing
+def odd_track (start : Nat) : Nat → Nat
+ | 0 => start
+ | n + 1 => 4 * (odd_track start n) + 1
 
-theorem general_track_bridge (n k : Nat) (_hx : n % 3 ≠ 0) :
- (n * 2^(2*k) - 1) / 3 = (n * 4^k - 1) / 3 := by
- have h_base : (2:Nat)^(2*k) = ((2:Nat)^2)^k := by rw [pow_mul]
- have h_four : (2:Nat)^2 = 4 := by rfl
- have : 2^(2*k) = 4^k := by rw [h_base, h_four]
- rw [this]
+def even_track_value (start n : Nat) : Nat :=
+ 3 * (odd_track start n) + 1
+
+theorem universal_track_pairing (start n : Nat) (x : Nat) (hx : odd_track start n = 4 * x + 1) :
+ ∃ m, even_track_value start n = 4 * m := by
+ dsimp [even_track_value]
+ use 3 * x + 1
+ omega
 
 -- 11. Generalizing the track bridge
 theorem general_track_bridge_dup (n k : Nat) (_hx : n % 3 ≠ 0) :
